@@ -1,0 +1,1816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MediCore — Hospital Management System</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@300;400;500&family=Playfair+Display:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ─── DESIGN TOKENS ─────────────────────────────────────── */
+:root {
+  --navy:    #0f1f3d;
+  --navy2:   #162444;
+  --navy3:   #1d2f52;
+  --slate:   #2a3f6f;
+  --white:   #ffffff;
+  --off:     #f7f8fc;
+  --off2:    #eef0f7;
+  --off3:    #e2e6f0;
+  --text:    #1a2540;
+  --text2:   #4a5578;
+  --text3:   #8a94b0;
+  --green:   #00a96e;
+  --green2:  #00c47f;
+  --green-s: rgba(0,169,110,.1);
+  --amber:   #f59e0b;
+  --amber-s: rgba(245,158,11,.1);
+  --red:     #ef4444;
+  --red-s:   rgba(239,68,68,.1);
+  --blue:    #3b82f6;
+  --blue-s:  rgba(59,130,246,.1);
+  --violet:  #8b5cf6;
+  --violet-s:rgba(139,92,246,.1);
+  --border:  #e2e6f0;
+  --border2: #c8cfdf;
+  --shadow:  0 1px 3px rgba(15,31,61,.08), 0 1px 2px rgba(15,31,61,.04);
+  --shadow2: 0 4px 16px rgba(15,31,61,.10), 0 2px 6px rgba(15,31,61,.06);
+  --shadow3: 0 20px 60px rgba(15,31,61,.18);
+  --r:       12px;
+  --r-sm:    8px;
+  --r-xs:    6px;
+  --mono: 'DM Mono', monospace;
+  --sans: 'DM Sans', sans-serif;
+  --serif: 'Playfair Display', serif;
+  --sidebar: 260px;
+}
+
+/* ─── RESET ─────────────────────────────────────────────── */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; font-size:14px; }
+body { background:var(--off); color:var(--text); font-family:var(--sans); min-height:100vh; overflow-x:hidden; -webkit-font-smoothing:antialiased; }
+button { font-family:var(--sans); cursor:pointer; }
+input, select, textarea { font-family:var(--sans); }
+::-webkit-scrollbar { width:5px; height:5px; }
+::-webkit-scrollbar-track { background:var(--off2); }
+::-webkit-scrollbar-thumb { background:var(--off3); border-radius:3px; }
+::-webkit-scrollbar-thumb:hover { background:var(--border2); }
+
+/* ─── LOADER ─────────────────────────────────────────────── */
+#loader {
+  position:fixed; inset:0;
+  background:var(--navy);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  z-index:9999;
+  transition:opacity .5s ease, visibility .5s ease;
+}
+#loader.hidden { opacity:0; visibility:hidden; pointer-events:none; }
+.loader-logo {
+  display:flex; align-items:center; gap:14px; margin-bottom:32px;
+}
+.loader-icon {
+  width:52px; height:52px;
+  background:var(--green);
+  border-radius:14px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:26px;
+  box-shadow:0 0 30px rgba(0,169,110,.4);
+}
+.loader-brand {
+  font-family:var(--serif);
+  font-size:32px;
+  color:#fff;
+  letter-spacing:-.5px;
+}
+.loader-brand span { color:var(--green); }
+.loader-bar {
+  width:200px; height:3px;
+  background:rgba(255,255,255,.1);
+  border-radius:2px;
+  overflow:hidden;
+}
+.loader-bar-fill {
+  height:100%;
+  background:linear-gradient(90deg,var(--green),var(--green2));
+  border-radius:2px;
+  animation:loadFill 1.4s ease forwards;
+}
+.loader-status {
+  font-family:var(--mono);
+  font-size:11px;
+  color:rgba(255,255,255,.35);
+  margin-top:12px;
+  letter-spacing:1px;
+}
+@keyframes loadFill { from{width:0} to{width:100%} }
+
+/* ─── LAYOUT ─────────────────────────────────────────────── */
+.app { display:flex; min-height:100vh; }
+
+/* ─── SIDEBAR ─────────────────────────────────────────────── */
+.sidebar {
+  width:var(--sidebar);
+  background:var(--navy);
+  display:flex; flex-direction:column;
+  position:fixed; top:0; left:0; bottom:0;
+  z-index:200;
+  transition:transform .3s cubic-bezier(.4,0,.2,1);
+}
+
+.sidebar-top {
+  padding:24px 20px 20px;
+  border-bottom:1px solid rgba(255,255,255,.06);
+}
+.brand {
+  display:flex; align-items:center; gap:12px;
+  text-decoration:none;
+}
+.brand-icon {
+  width:38px; height:38px;
+  background:var(--green);
+  border-radius:10px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:18px;
+  flex-shrink:0;
+  box-shadow:0 4px 12px rgba(0,169,110,.3);
+}
+.brand-name {
+  font-family:var(--serif);
+  font-size:20px;
+  color:#fff;
+  letter-spacing:-.3px;
+}
+.brand-tagline {
+  font-size:10px;
+  color:rgba(255,255,255,.35);
+  letter-spacing:.5px;
+  margin-top:1px;
+}
+
+.sidebar-section-label {
+  font-family:var(--mono);
+  font-size:9px;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  color:rgba(255,255,255,.25);
+  padding:16px 20px 6px;
+}
+
+.nav-item {
+  display:flex; align-items:center; gap:11px;
+  padding:10px 12px 10px 20px;
+  margin:1px 8px;
+  border-radius:var(--r-sm);
+  cursor:pointer;
+  transition:all .18s ease;
+  position:relative;
+  text-decoration:none;
+}
+.nav-item:hover { background:rgba(255,255,255,.06); }
+.nav-item.active {
+  background:rgba(0,169,110,.15);
+}
+.nav-item.active::before {
+  content:'';
+  position:absolute; left:0; top:8px; bottom:8px;
+  width:3px; border-radius:0 2px 2px 0;
+  background:var(--green);
+  left:-8px;
+}
+.nav-icon {
+  width:32px; height:32px;
+  border-radius:var(--r-xs);
+  display:flex; align-items:center; justify-content:center;
+  font-size:15px;
+  flex-shrink:0;
+  background:rgba(255,255,255,.06);
+  transition:background .18s ease;
+}
+.nav-item.active .nav-icon { background:rgba(0,169,110,.25); }
+.nav-item:hover .nav-icon { background:rgba(255,255,255,.1); }
+.nav-text { font-size:13px; font-weight:500; color:rgba(255,255,255,.65); }
+.nav-item.active .nav-text { color:#fff; }
+.nav-badge {
+  margin-left:auto;
+  background:var(--green);
+  color:#fff;
+  font-size:10px;
+  font-weight:600;
+  padding:1px 7px;
+  border-radius:10px;
+  font-family:var(--mono);
+}
+
+.sidebar-bottom {
+  margin-top:auto;
+  padding:16px;
+  border-top:1px solid rgba(255,255,255,.06);
+}
+.api-badge {
+  display:flex; align-items:center; gap:9px;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:var(--r-sm);
+  padding:10px 12px;
+  cursor:pointer;
+  transition:background .18s ease;
+}
+.api-badge:hover { background:rgba(255,255,255,.07); }
+.api-dot {
+  width:7px; height:7px; border-radius:50%;
+  background:rgba(255,255,255,.2);
+  transition:all .3s ease;
+  flex-shrink:0;
+}
+.api-dot.online { background:var(--green); box-shadow:0 0 8px rgba(0,169,110,.6); animation:dotPulse 2s ease-in-out infinite; }
+.api-dot.offline { background:var(--red); }
+@keyframes dotPulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+.api-info { flex:1; }
+.api-status-text { font-size:12px; font-weight:500; color:rgba(255,255,255,.7); }
+.api-sub { font-family:var(--mono); font-size:10px; color:rgba(255,255,255,.3); margin-top:1px; }
+
+/* ─── MAIN ─────────────────────────────────────────────── */
+.main { flex:1; margin-left:var(--sidebar); display:flex; flex-direction:column; min-height:100vh; }
+
+/* ─── TOPBAR ─────────────────────────────────────────────── */
+.topbar {
+  height:64px;
+  background:var(--white);
+  border-bottom:1px solid var(--border);
+  display:flex; align-items:center;
+  padding:0 28px;
+  gap:12px;
+  position:sticky; top:0; z-index:100;
+  box-shadow:var(--shadow);
+}
+.topbar-breadcrumb {
+  font-family:var(--mono);
+  font-size:11px;
+  color:var(--text3);
+}
+.topbar-title { font-size:17px; font-weight:600; color:var(--text); margin-left:4px; letter-spacing:-.2px; }
+.topbar-sep { color:var(--border2); margin:0 2px; }
+.flex1 { flex:1; }
+
+.btn {
+  display:inline-flex; align-items:center; gap:7px;
+  height:36px; padding:0 16px;
+  border-radius:var(--r-sm);
+  font-size:13px; font-weight:500;
+  border:1px solid var(--border);
+  background:var(--white);
+  color:var(--text2);
+  transition:all .18s ease;
+  white-space:nowrap;
+}
+.btn:hover { border-color:var(--border2); background:var(--off); color:var(--text); box-shadow:var(--shadow); }
+.btn-primary {
+  background:var(--navy);
+  color:#fff;
+  border-color:var(--navy);
+}
+.btn-primary:hover { background:var(--navy2); border-color:var(--navy2); box-shadow:0 4px 12px rgba(15,31,61,.25); }
+.btn-green {
+  background:var(--green);
+  color:#fff;
+  border-color:var(--green);
+}
+.btn-green:hover { background:var(--green2); box-shadow:0 4px 12px rgba(0,169,110,.3); }
+.btn-sm { height:30px; padding:0 12px; font-size:12px; }
+.btn-icon { width:36px; padding:0; justify-content:center; }
+
+/* ─── CONTENT ─────────────────────────────────────────────── */
+.content { padding:28px; flex:1; }
+.section { display:none; }
+.section.active { display:block; animation:fadeUp .3s ease; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+/* ─── PAGE HEADER ─────────────────────────────────────────── */
+.page-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:24px; gap:16px; flex-wrap:wrap; }
+.page-header-left {}
+.page-heading { font-family:var(--serif); font-size:26px; font-weight:500; color:var(--text); letter-spacing:-.3px; }
+.page-sub { font-size:13px; color:var(--text3); margin-top:3px; }
+.page-header-right { display:flex; align-items:center; gap:8px; }
+
+/* ─── CARDS ─────────────────────────────────────────────── */
+.card {
+  background:var(--white);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  box-shadow:var(--shadow);
+  overflow:hidden;
+}
+.card-header {
+  padding:16px 20px;
+  border-bottom:1px solid var(--off2);
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+}
+.card-title { font-size:13px; font-weight:600; color:var(--text); }
+.card-sub { font-size:12px; color:var(--text3); margin-top:2px; }
+.card-body { padding:20px; }
+.card-body-flush { padding:0; }
+
+/* ─── GRIDS ─────────────────────────────────────────────── */
+.g4 { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:20px; }
+.g3 { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:20px; }
+.g2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
+.g21 { display:grid; grid-template-columns:2fr 1fr; gap:16px; margin-bottom:20px; }
+.g12 { display:grid; grid-template-columns:1fr 2fr; gap:16px; margin-bottom:20px; }
+
+/* ─── KPI CARDS ─────────────────────────────────────────── */
+.kpi {
+  background:var(--white);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:20px;
+  box-shadow:var(--shadow);
+  position:relative;
+  overflow:hidden;
+  transition:box-shadow .2s ease, transform .2s ease;
+  cursor:default;
+}
+.kpi:hover { box-shadow:var(--shadow2); transform:translateY(-1px); }
+.kpi-top { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:14px; }
+.kpi-icon {
+  width:40px; height:40px;
+  border-radius:10px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:18px;
+  flex-shrink:0;
+}
+.kpi-icon.navy { background:var(--navy); }
+.kpi-icon.green { background:var(--green-s); }
+.kpi-icon.amber { background:var(--amber-s); }
+.kpi-icon.red { background:var(--red-s); }
+.kpi-icon.violet { background:var(--violet-s); }
+.kpi-icon.blue { background:var(--blue-s); }
+.kpi-change {
+  display:inline-flex; align-items:center; gap:4px;
+  font-size:11px; font-weight:600; padding:2px 7px;
+  border-radius:20px; font-family:var(--mono);
+}
+.kpi-change.up { background:var(--green-s); color:var(--green); }
+.kpi-change.down { background:var(--red-s); color:var(--red); }
+.kpi-change.neutral { background:var(--off2); color:var(--text3); }
+.kpi-val { font-family:var(--mono); font-size:32px; font-weight:500; color:var(--text); line-height:1; margin-bottom:6px; }
+.kpi-label { font-size:12px; color:var(--text3); font-weight:500; }
+.kpi-accent {
+  position:absolute; bottom:0; left:0; right:0;
+  height:3px;
+}
+.kpi-accent.green { background:linear-gradient(90deg,var(--green),var(--green2)); }
+.kpi-accent.amber { background:linear-gradient(90deg,var(--amber),#fbbf24); }
+.kpi-accent.red { background:linear-gradient(90deg,var(--red),#f87171); }
+.kpi-accent.navy { background:linear-gradient(90deg,var(--navy),var(--slate)); }
+.kpi-accent.violet { background:linear-gradient(90deg,var(--violet),#a78bfa); }
+
+/* ─── BADGES ─────────────────────────────────────────────── */
+.badge {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:3px 9px; border-radius:20px;
+  font-size:11px; font-weight:600;
+  letter-spacing:.2px;
+}
+.badge::before { content:''; width:5px; height:5px; border-radius:50%; flex-shrink:0; }
+.badge-green { background:var(--green-s); color:var(--green); }
+.badge-green::before { background:var(--green); }
+.badge-amber { background:var(--amber-s); color:#d97706; }
+.badge-amber::before { background:var(--amber); }
+.badge-red { background:var(--red-s); color:var(--red); }
+.badge-red::before { background:var(--red); }
+.badge-blue { background:var(--blue-s); color:var(--blue); }
+.badge-blue::before { background:var(--blue); }
+.badge-violet { background:var(--violet-s); color:var(--violet); }
+.badge-violet::before { background:var(--violet); }
+.badge-navy { background:rgba(15,31,61,.08); color:var(--navy2); }
+.badge-navy::before { background:var(--navy2); }
+.badge-gray { background:var(--off2); color:var(--text3); }
+.badge-gray::before { background:var(--text3); }
+
+/* ─── TABLE ─────────────────────────────────────────────── */
+.table-wrap { overflow-x:auto; }
+table { width:100%; border-collapse:collapse; }
+thead th {
+  font-size:11px; font-weight:600;
+  color:var(--text3); text-transform:uppercase; letter-spacing:.8px;
+  padding:11px 16px; text-align:left;
+  background:var(--off); border-bottom:1px solid var(--border);
+  white-space:nowrap;
+}
+tbody tr {
+  border-bottom:1px solid var(--off2);
+  transition:background .12s ease;
+  cursor:pointer;
+}
+tbody tr:last-child { border-bottom:none; }
+tbody tr:hover { background:var(--off); }
+tbody td { padding:13px 16px; font-size:13px; vertical-align:middle; color:var(--text); }
+
+/* ─── AVATAR ─────────────────────────────────────────────── */
+.avatar {
+  width:34px; height:34px; border-radius:var(--r-sm);
+  display:flex; align-items:center; justify-content:center;
+  font-size:12px; font-weight:700; color:#fff; flex-shrink:0;
+}
+.pcell { display:flex; align-items:center; gap:10px; }
+.pcell-name { font-weight:600; font-size:13px; }
+.pcell-id { font-family:var(--mono); font-size:10px; color:var(--text3); margin-top:1px; }
+
+/* ─── FILTER BAR ─────────────────────────────────────────── */
+.filter-bar { display:flex; align-items:center; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+.filter-chip {
+  height:32px; padding:0 14px; border-radius:20px;
+  font-size:12px; font-weight:500;
+  border:1px solid var(--border); background:var(--white);
+  color:var(--text2); cursor:pointer;
+  transition:all .15s ease;
+}
+.filter-chip:hover { border-color:var(--border2); color:var(--text); }
+.filter-chip.active { background:var(--navy); border-color:var(--navy); color:#fff; }
+.search-box { position:relative; }
+.search-box input {
+  height:36px; width:280px;
+  border:1px solid var(--border); border-radius:var(--r-sm);
+  padding:0 14px 0 36px;
+  font-size:13px; color:var(--text); background:var(--white); outline:none;
+  transition:border-color .18s ease, box-shadow .18s ease;
+}
+.search-box input:focus { border-color:var(--navy); box-shadow:0 0 0 3px rgba(15,31,61,.08); }
+.search-box::before {
+  content:'⌕'; position:absolute; left:11px; top:50%; transform:translateY(-50%);
+  color:var(--text3); font-size:17px; pointer-events:none;
+}
+.search-box input::placeholder { color:var(--text3); }
+.count-chip {
+  font-family:var(--mono); font-size:11px;
+  background:var(--off2); color:var(--text3);
+  padding:3px 9px; border-radius:20px;
+}
+
+/* ─── FORMS ─────────────────────────────────────────────── */
+.form-group { margin-bottom:16px; }
+.form-label { display:block; font-size:12px; font-weight:600; color:var(--text2); margin-bottom:6px; letter-spacing:.2px; }
+.form-input, .form-select, .form-textarea {
+  width:100%; height:40px;
+  border:1px solid var(--border); border-radius:var(--r-sm);
+  padding:0 13px; font-size:13px; color:var(--text);
+  background:var(--white); outline:none;
+  transition:border-color .18s ease, box-shadow .18s ease;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color:var(--navy); box-shadow:0 0 0 3px rgba(15,31,61,.08);
+}
+.form-textarea { height:auto; min-height:88px; padding:11px 13px; resize:vertical; line-height:1.5; }
+.form-select option { background:var(--white); }
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.form-hint { font-size:11px; color:var(--text3); margin-top:4px; }
+
+/* ─── MODALS ─────────────────────────────────────────────── */
+.modal-overlay {
+  position:fixed; inset:0;
+  background:rgba(15,31,61,.45);
+  backdrop-filter:blur(6px);
+  display:flex; align-items:center; justify-content:center;
+  z-index:500;
+  opacity:0; visibility:hidden;
+  transition:all .25s ease;
+  padding:20px;
+}
+.modal-overlay.open { opacity:1; visibility:visible; }
+.modal {
+  background:var(--white); border-radius:16px;
+  width:100%; max-width:520px; max-height:92vh;
+  overflow-y:auto; box-shadow:var(--shadow3);
+  transform:scale(.96) translateY(10px);
+  transition:transform .25s cubic-bezier(.4,0,.2,1);
+}
+.modal-overlay.open .modal { transform:scale(1) translateY(0); }
+.modal-header {
+  padding:22px 24px 18px; border-bottom:1px solid var(--off2);
+  display:flex; align-items:center; gap:12px;
+}
+.modal-header-icon {
+  width:36px; height:36px; border-radius:var(--r-sm);
+  display:flex; align-items:center; justify-content:center;
+  font-size:17px; background:var(--off); flex-shrink:0;
+}
+.modal-title { font-size:15px; font-weight:600; color:var(--text); }
+.modal-subtitle { font-size:12px; color:var(--text3); margin-top:2px; }
+.modal-close {
+  margin-left:auto; width:30px; height:30px;
+  border-radius:var(--r-xs); border:1px solid var(--border);
+  background:transparent; color:var(--text3); font-size:14px;
+  display:flex; align-items:center; justify-content:center;
+  transition:all .15s ease;
+}
+.modal-close:hover { background:var(--red-s); color:var(--red); border-color:var(--red); }
+.modal-body { padding:20px 24px; }
+.modal-footer {
+  padding:16px 24px 20px; border-top:1px solid var(--off2);
+  display:flex; align-items:center; justify-content:flex-end; gap:8px;
+}
+
+/* ─── TOAST ─────────────────────────────────────────────── */
+.toast-container { position:fixed; bottom:24px; right:24px; z-index:9999; display:flex; flex-direction:column; gap:8px; }
+.toast {
+  background:var(--white); border:1px solid var(--border);
+  border-left:4px solid var(--navy);
+  border-radius:var(--r-sm); padding:12px 16px;
+  font-size:13px; color:var(--text);
+  min-width:280px; max-width:360px;
+  box-shadow:var(--shadow2);
+  animation:toastIn .3s ease;
+  display:flex; align-items:flex-start; gap:10px;
+}
+.toast.success { border-left-color:var(--green); }
+.toast.error { border-left-color:var(--red); }
+.toast.warn { border-left-color:var(--amber); }
+.toast-icon { font-size:15px; flex-shrink:0; margin-top:1px; }
+.toast-msg { flex:1; font-size:13px; line-height:1.4; }
+@keyframes toastIn { from{opacity:0;transform:translateX(16px)} to{opacity:1;transform:translateX(0)} }
+
+/* ─── ACTIVITY ─────────────────────────────────────────── */
+.activity-list { display:flex; flex-direction:column; }
+.activity-item {
+  display:flex; gap:12px; padding:12px 0;
+  border-bottom:1px solid var(--off2);
+}
+.activity-item:last-child { border-bottom:none; }
+.activity-icon {
+  width:32px; height:32px; border-radius:var(--r-xs);
+  display:flex; align-items:center; justify-content:center;
+  font-size:14px; flex-shrink:0; margin-top:1px;
+}
+.activity-body { flex:1; }
+.activity-text { font-size:13px; color:var(--text); line-height:1.4; }
+.activity-time { font-size:11px; color:var(--text3); margin-top:3px; font-family:var(--mono); }
+
+/* ─── PROGRESS ─────────────────────────────────────────── */
+.prog-row { margin-bottom:14px; }
+.prog-row:last-child { margin-bottom:0; }
+.prog-meta { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+.prog-label { font-size:12px; font-weight:500; color:var(--text2); }
+.prog-val { font-family:var(--mono); font-size:12px; color:var(--text3); }
+.prog-track { height:6px; background:var(--off2); border-radius:3px; overflow:hidden; }
+.prog-fill { height:100%; border-radius:3px; transition:width 1s cubic-bezier(.4,0,.2,1); }
+
+/* ─── CHART ─────────────────────────────────────────────── */
+.chart-area { display:flex; align-items:flex-end; gap:5px; height:130px; }
+.bar-col { flex:1; display:flex; flex-direction:column; align-items:center; gap:5px; height:100%; }
+.bar-col-inner { flex:1; width:100%; display:flex; align-items:flex-end; }
+.bar { width:100%; border-radius:4px 4px 0 0; min-height:4px; transition:height .7s cubic-bezier(.4,0,.2,1); }
+.bar-lbl { font-family:var(--mono); font-size:9px; color:var(--text3); white-space:nowrap; }
+
+/* ─── BED MAP ─────────────────────────────────────────── */
+.bed-grid { display:grid; grid-template-columns:repeat(8,1fr); gap:6px; }
+.bed {
+  aspect-ratio:1; border-radius:var(--r-xs); border:1px solid;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  cursor:pointer; transition:all .15s ease; gap:2px;
+  font-size:9px; font-family:var(--mono); font-weight:500;
+}
+.bed:hover { transform:scale(1.08); box-shadow:var(--shadow); }
+.bed.free { background:var(--green-s); border-color:rgba(0,169,110,.25); color:var(--green); }
+.bed.occupied { background:var(--red-s); border-color:rgba(239,68,68,.25); color:var(--red); }
+.bed.reserved { background:var(--amber-s); border-color:rgba(245,158,11,.25); color:#d97706; }
+.bed.maint { background:var(--off2); border-color:var(--border); color:var(--text3); }
+.bed-num { font-size:11px; font-weight:700; }
+
+/* ─── BILL DETAIL ─────────────────────────────────────── */
+.bill-line { display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px solid var(--off2); }
+.bill-line:last-child { border-bottom:none; }
+.bill-lbl { font-size:12px; color:var(--text2); }
+.bill-val { font-family:var(--mono); font-size:13px; font-weight:600; color:var(--text); }
+.bill-total-line { background:var(--off); border-radius:var(--r-xs); padding:12px 14px; margin-top:8px; display:flex; justify-content:space-between; align-items:center; }
+.bill-total-lbl { font-size:13px; font-weight:600; color:var(--text); }
+.bill-total-val { font-family:var(--mono); font-size:22px; font-weight:700; color:var(--navy); }
+
+/* ─── SLOT GRID ─────────────────────────────────────────── */
+.slot-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.slot {
+  padding:10px 8px; border-radius:var(--r-xs); border:1px solid;
+  text-align:center; font-family:var(--mono); font-size:11px; font-weight:500;
+  cursor:pointer; transition:all .15s ease;
+}
+.slot.avail { background:var(--green-s); border-color:rgba(0,169,110,.25); color:var(--green); }
+.slot.avail:hover { background:var(--green); color:#fff; }
+.slot.booked { background:var(--off2); border-color:var(--border); color:var(--text3); pointer-events:none; }
+.slot.emerg { background:var(--amber-s); border-color:rgba(245,158,11,.25); color:#d97706; }
+
+/* ─── STAT PILL ─────────────────────────────────────────── */
+.stat-pill { display:flex; align-items:center; gap:10px; padding:12px 14px; background:var(--off); border-radius:var(--r-sm); }
+.stat-pill-val { font-family:var(--mono); font-size:20px; font-weight:600; }
+.stat-pill-lbl { font-size:11px; color:var(--text3); }
+
+/* ─── OFFLINE BANNER ─────────────────────────────────────── */
+.offline-bar {
+  display:none; align-items:center; gap:10px;
+  background:#fffbeb; border:1px solid #fde68a;
+  border-radius:var(--r-sm); padding:10px 16px;
+  margin-bottom:20px; font-size:13px; color:#92400e;
+}
+.offline-bar.show { display:flex; }
+.offline-bar code { background:#fef3c7; padding:1px 6px; border-radius:3px; font-family:var(--mono); font-size:12px; }
+
+/* ─── RESPONSIVE ─────────────────────────────────────────── */
+@media(max-width:1100px) {
+  .g4 { grid-template-columns:repeat(2,1fr); }
+}
+@media(max-width:768px) {
+  :root { --sidebar:0px; }
+  .sidebar { transform:translateX(-260px); width:260px; }
+  .sidebar.open { transform:translateX(0); --sidebar:0px; }
+  .main { margin-left:0; }
+  .g4,.g3 { grid-template-columns:1fr 1fr; }
+  .g2,.g21,.g12 { grid-template-columns:1fr; }
+  .form-row { grid-template-columns:1fr; }
+  .content { padding:16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- LOADER -->
+<div id="loader">
+  <div class="loader-logo">
+    <div class="loader-icon">🏥</div>
+    <div>
+      <div class="loader-brand">Medi<span>Core</span></div>
+      <div style="font-size:11px;color:rgba(255,255,255,.3);letter-spacing:.5px;margin-top:1px">HOSPITAL MANAGEMENT SYSTEM</div>
+    </div>
+  </div>
+  <div class="loader-bar"><div class="loader-bar-fill"></div></div>
+  <div class="loader-status">LOADING SYSTEMS...</div>
+</div>
+
+<!-- APP -->
+<div class="app">
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-top">
+      <div class="brand">
+        <div class="brand-icon">🏥</div>
+        <div>
+          <div class="brand-name">MediCore</div>
+          <div class="brand-tagline">HMS v3.0</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-section-label">Main</div>
+    <div class="nav-item active" onclick="switchSection('dashboard',this)">
+      <div class="nav-icon">📊</div>
+      <span class="nav-text">Dashboard</span>
+    </div>
+    <div class="nav-item" onclick="switchSection('patients',this)">
+      <div class="nav-icon">👥</div>
+      <span class="nav-text">Patients</span>
+      <span class="nav-badge" id="navBadgePatients">0</span>
+    </div>
+    <div class="nav-item" onclick="switchSection('appointments',this)">
+      <div class="nav-icon">📅</div>
+      <span class="nav-text">Appointments</span>
+    </div>
+    <div class="nav-item" onclick="switchSection('billing',this)">
+      <div class="nav-icon">💳</div>
+      <span class="nav-text">Billing</span>
+      <span class="nav-badge" id="navBadgeBilling" style="background:var(--amber)">0</span>
+    </div>
+
+    <div class="sidebar-section-label">Clinical</div>
+    <div class="nav-item" onclick="switchSection('beds',this)">
+      <div class="nav-icon">🛏</div>
+      <span class="nav-text">Bed Management</span>
+    </div>
+    <div class="nav-item" onclick="switchSection('staff',this)">
+      <div class="nav-icon">🩺</div>
+      <span class="nav-text">Staff Directory</span>
+    </div>
+    <div class="nav-item" onclick="switchSection('reports',this)">
+      <div class="nav-icon">📈</div>
+      <span class="nav-text">Reports & Analytics</span>
+    </div>
+
+    <div class="sidebar-bottom">
+      <div class="api-badge" onclick="checkAPI()">
+        <div class="api-dot" id="apiDot"></div>
+        <div class="api-info">
+          <div class="api-status-text" id="apiStatusText">Connecting...</div>
+          <div class="api-sub">127.0.0.1:8000</div>
+        </div>
+        <span style="font-size:11px;color:rgba(255,255,255,.25)">↻</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ═══ MAIN ═══ -->
+  <div class="main">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <span class="topbar-breadcrumb">MediCore</span>
+      <span class="topbar-breadcrumb" style="margin:0 6px;color:var(--border2)">/</span>
+      <span class="topbar-title" id="pageTitle">Dashboard</span>
+      <div class="flex1"></div>
+      <button class="btn" id="ctxBtn1" onclick="handleCtx1()">+ New Patient</button>
+      <button class="btn btn-primary" id="ctxBtn2" onclick="handleCtx2()">⚡ Quick Action</button>
+    </header>
+
+    <!-- CONTENT -->
+    <div class="content">
+
+      <!-- ══════════════════════════════════════════════════ -->
+      <!-- DASHBOARD                                         -->
+      <!-- ══════════════════════════════════════════════════ -->
+      <div class="section active" id="section-dashboard">
+
+        <div id="offlineBar" class="offline-bar">
+          ⚠️ <strong>Backend offline.</strong>&nbsp; Run <code>python manage.py runserver</code> — showing demo data.
+        </div>
+
+        <div class="page-header">
+          <div class="page-header-left">
+            <div class="page-heading">Good morning, Doctor 👋</div>
+            <div class="page-sub" id="dashDate">Loading date...</div>
+          </div>
+          <div class="page-header-right">
+            <button class="btn" onclick="checkAPI()">↻ Refresh</button>
+            <button class="btn btn-primary" onclick="openModal('newPatientModal')">+ Admit Patient</button>
+          </div>
+        </div>
+
+        <!-- KPIs -->
+        <div class="g4">
+          <div class="kpi">
+            <div class="kpi-top">
+              <div class="kpi-icon navy">👥</div>
+              <div class="kpi-change neutral" id="kpiChg1">—</div>
+            </div>
+            <div class="kpi-val" id="kpi1">—</div>
+            <div class="kpi-label">Total Patients</div>
+            <div class="kpi-accent navy"></div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-top">
+              <div class="kpi-icon green">🛏</div>
+              <div class="kpi-change up" id="kpiChg2">Live</div>
+            </div>
+            <div class="kpi-val" id="kpi2">—</div>
+            <div class="kpi-label">Currently Admitted</div>
+            <div class="kpi-accent green"></div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-top">
+              <div class="kpi-icon amber">💳</div>
+              <div class="kpi-change down" id="kpiChg3">Pending</div>
+            </div>
+            <div class="kpi-val" id="kpi3">—</div>
+            <div class="kpi-label">Unpaid Bills</div>
+            <div class="kpi-accent amber"></div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-top">
+              <div class="kpi-icon violet">💰</div>
+              <div class="kpi-change up" id="kpiChg4">+12%</div>
+            </div>
+            <div class="kpi-val" id="kpi4">—</div>
+            <div class="kpi-label">Revenue Collected</div>
+            <div class="kpi-accent violet"></div>
+          </div>
+        </div>
+
+        <!-- Middle row -->
+        <div class="g21">
+          <!-- Recent Activity -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Recent Activity</div>
+                <div class="card-sub">Live feed from all departments</div>
+              </div>
+              <button class="btn btn-sm">View all</button>
+            </div>
+            <div class="card-body" style="padding-top:4px;padding-bottom:4px;">
+              <div class="activity-list" id="activityList"></div>
+            </div>
+          </div>
+
+          <!-- Side panel -->
+          <div style="display:flex;flex-direction:column;gap:16px;">
+            <div class="card">
+              <div class="card-header"><div class="card-title">Bed Occupancy</div></div>
+              <div class="card-body">
+                <div style="display:flex;flex-direction:column;gap:8px;">
+                  <div class="stat-pill">
+                    <div style="width:10px;height:10px;border-radius:50%;background:var(--green);flex-shrink:0"></div>
+                    <div style="flex:1"><div class="stat-pill-lbl">Available</div></div>
+                    <div class="stat-pill-val" id="bedFree" style="color:var(--green)">—</div>
+                  </div>
+                  <div class="stat-pill">
+                    <div style="width:10px;height:10px;border-radius:50%;background:var(--red);flex-shrink:0"></div>
+                    <div style="flex:1"><div class="stat-pill-lbl">Occupied</div></div>
+                    <div class="stat-pill-val" id="bedOcc" style="color:var(--red)">—</div>
+                  </div>
+                  <div class="stat-pill">
+                    <div style="width:10px;height:10px;border-radius:50%;background:var(--amber);flex-shrink:0"></div>
+                    <div style="flex:1"><div class="stat-pill-lbl">Reserved</div></div>
+                    <div class="stat-pill-val" id="bedRes" style="color:var(--amber)">—</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header"><div class="card-title">Conditions Today</div></div>
+              <div class="card-body" id="miniCondChart" style="padding-bottom:10px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom row -->
+        <div class="g2">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Today's Appointments</div>
+              <button class="btn btn-sm" onclick="switchSection('appointments',document.querySelectorAll('.nav-item')[2])">See all →</button>
+            </div>
+            <div class="card-body-flush">
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>Patient</th><th>Doctor</th><th>Time</th><th>Status</th></tr></thead>
+                  <tbody id="todayApptTbl"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Monthly Admissions</div></div>
+            <div class="card-body">
+              <div class="chart-area" id="admChart"></div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /dashboard -->
+
+      <!-- ══════════════════════════════════════════════════ -->
+      <!-- PATIENTS                                          -->
+      <!-- ══════════════════════════════════════════════════ -->
+      <div class="section" id="section-patients">
+        <div class="page-header">
+          <div>
+            <div class="page-heading">Patient Records</div>
+            <div class="page-sub">Complete medical record database</div>
+          </div>
+          <div class="page-header-right">
+            <button class="btn btn-primary" onclick="openModal('newPatientModal')">+ Add Patient</button>
+          </div>
+        </div>
+        <div class="filter-bar">
+          <div class="search-box">
+            <input type="text" placeholder="Search patients..." id="ptSearch" oninput="filterRecs(this.value)">
+          </div>
+          <button class="filter-chip active" onclick="setCondFilter('ALL',this)">All</button>
+          <button class="filter-chip" onclick="setCondFilter('FLU',this)">Flu</button>
+          <button class="filter-chip" onclick="setCondFilter('DIABETES',this)">Diabetes</button>
+          <button class="filter-chip" onclick="setCondFilter('HYPERTENSION',this)">Hypertension</button>
+          <button class="filter-chip" onclick="setCondFilter('ASTHMA',this)">Asthma</button>
+          <button class="filter-chip" onclick="setCondFilter('COVID',this)">COVID-19</button>
+          <button class="filter-chip" onclick="setCondFilter('OTHER',this)">Other</button>
+          <span class="count-chip" id="recCount"></span>
+        </div>
+        <div class="card">
+          <div class="card-body-flush">
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Patient</th><th>Condition</th><th>Admission</th><th>Discharge</th><th>Next Appt</th><th>Status</th><th></th></tr></thead>
+                <tbody id="recordsTbl"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════ -->
+      <!-- APPOINTMENTS                                      -->
+      <!-- ══════════════════════════════════════════════════ -->
+      <div class="section" id="section-appointments">
+        <div class="page-header">
+          <div>
+            <div class="page-heading">Appointments</div>
+            <div class="page-sub">Schedule and manage patient appointments</div>
+          </div>
+          <div class="page-header-right">
+            <button class="btn btn-primary" onclick="openModal('apptModal')">+ Schedule Appointment</button>
+          </div>
+        </div>
+        <div class="g12">
+          <div class="card">
+            <div class="card-header"><div class="card-title">All Appointments</div></div>
+            <div class="card-body-flush">
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>Patient</th><th>Doctor</th><th>Date</th><th>Time</th><th>Status</th></tr></thead>
+                  <tbody id="apptTbl"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Available Slots — Today</div></div>
+            <div class="card-body">
+              <div class="slot-grid" id="slotGrid"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════ -->
+      <!-- BILLING                                           -->
+      <!-- ══════════════════════════════════════════════════ -->
+      <div class="section" id="section-billing">
+        <div class="page-header">
+          <div>
+            <div class="page-heading">Billing & Payments</div>
+            <div class="page-sub">Manage patient invoices and track revenue</div>
+          </div>
+          <div class="page-header-right">
+            <button class="btn btn-primary" onclick="openNewBillModal()">+ Generate Bill</button>
+          </div>
+        </div>
+        <div class="g3">
+          <div class="kpi">
+            <div class="kpi-top"><div class="kpi-icon navy">📋</div></div>
+            <div class="kpi-val" id="bkpi1" style="font-size:22px">—</div>
+            <div class="kpi-label">Total Billed</div>
+            <div class="kpi-accent navy"></div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-top"><div class="kpi-icon green">✅</div></div>
+            <div class="kpi-val" id="bkpi2" style="font-size:22px">—</div>
+            <div class="kpi-label">Amount Collected</div>
+            <div class="kpi-accent green"></div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-top"><div class="kpi-icon amber">⏳</div></div>
+            <div class="kpi-val" id="bkpi3" style="font-size:22px">—</div>
+            <div class="kpi-label">Outstanding</div>
+            <div class="kpi-accent amber"></div>
+          </div>
+        </div>
+        <div class="filter-bar">
+          <div class="search-box">
+            <input type="text" placeholder="Search bills..." oninput="filterBills(this.value)">
+          </div>
+          <button class="filter-chip active" onclick="setBillFilter('ALL',this)">All Bills</button>
+          <button class="filter-chip" onclick="setBillFilter('PAID',this)">Paid</button>
+          <button class="filter-chip" onclick="setBillFilter('PENDING',this)">Pending</button>
+        </div>
+        <div class="card">
+          <div class="card-body-flush">
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Bill No.</th><th>Patient</th><th>Date</th><th>Consultation</th><th>Treatment</th><th>Total</th><th>Status</th><th></th></tr></thead>
+                <tbody id="billingTbl"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════ -->
+      <!-- BEDS                                              -->
+      <!-- ══════════════════════════════════════════════════ -->
+      <div class="section" id="section-beds">
+        <div class="page-header">
+          <div>
+            <div class="page-heading">Bed Management</div>
+            <div class="page-sub">Real-time bed occupancy across all wards</div>
+          </div>
+        </div>
+        <div class="g4">
+          <div class="kpi">
+            <div class="kpi-top"><div class="kpi-icon green">🟢</div></div>
+            <div class="kpi-val" id="bdfree" style="color:var(--green)">—</div>
+            <div class="kpi-label">Available Beds</div>
+            <div class="kpi-accent green"></div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-top"><div class="kpi-icon red">🔴</div></div>
+            <div class="kpi-val" id="bdocc" style="color:var(--red)">—</div>
+            <div class="kpi-label">Occupied</div>
+            <div class="kpi-accent red"></div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-top"><div class="kpi-icon amber">🟡</div></div>
+            <div class="kpi-val" id="bdres" style="color:var(--amber)">—</div>
+            <div class="kpi-label">Reserved</div>
+            <div class="kpi-accent amber"></div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-top"><div class="kpi-icon violet">📊</div></div>
+            <div class="kpi-val" id="bdrate" style="color:var(--violet)">—</div>
+            <div class="kpi-label">Occupancy Rate</div>
+            <div class="kpi-accent violet"></div>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-header">
+            <div class="card-title">General Ward — 32 Beds</div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <span class="badge badge-green">Available</span>
+              <span class="badge badge-red">Occupied</span>
+              <span class="badge badge-amber">Reserved</span>
+              <span class="badge badge-gray">Maintenance</span>
+            </div>
+          </div>
+          <div class="card-body"><div class="bed-grid" id="bedMap"></div></div>
+        </div>
+        <div class="g2">
+          <div class="card">
+            <div class="card-header"><div class="card-title">ICU — 8 Beds</div></div>
+            <div class="card-body"><div class="bed-grid" style="grid-template-columns:repeat(4,1fr)" id="icuMap"></div></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Paediatric Ward — 8 Beds</div></div>
+            <div class="card-body"><div class="bed-grid" style="grid-template-columns:repeat(4,1fr)" id="paedMap"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════ -->
+      <!-- STAFF                                             -->
+      <!-- ══════════════════════════════════════════════════ -->
+      <div class="section" id="section-staff">
+        <div class="page-header">
+          <div>
+            <div class="page-heading">Staff Directory</div>
+            <div class="page-sub">Medical and support staff on duty</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-body-flush">
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Name</th><th>Role</th><th>Department</th><th>Shift</th><th>Status</th></tr></thead>
+                <tbody id="staffTbl"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════ -->
+      <!-- REPORTS                                           -->
+      <!-- ══════════════════════════════════════════════════ -->
+      <div class="section" id="section-reports">
+        <div class="page-header">
+          <div>
+            <div class="page-heading">Reports & Analytics</div>
+            <div class="page-sub">Financial and clinical performance metrics</div>
+          </div>
+          <div class="page-header-right">
+            <button class="btn btn-primary" onclick="showToast('Exporting report...','success')">📄 Export PDF</button>
+          </div>
+        </div>
+        <div class="g4" style="margin-bottom:20px">
+          <div class="card" style="text-align:center;padding:24px 16px">
+            <div style="font-family:var(--mono);font-size:32px;font-weight:600;color:var(--navy)" id="rpt1">—</div>
+            <div style="font-size:12px;color:var(--text3);margin-top:6px">Total Records</div>
+          </div>
+          <div class="card" style="text-align:center;padding:24px 16px">
+            <div style="font-family:var(--mono);font-size:32px;font-weight:600;color:var(--green)" id="rpt2">—</div>
+            <div style="font-size:12px;color:var(--text3);margin-top:6px">Discharged</div>
+          </div>
+          <div class="card" style="text-align:center;padding:24px 16px">
+            <div style="font-family:var(--mono);font-size:32px;font-weight:600;color:var(--amber)" id="rpt3">—</div>
+            <div style="font-size:12px;color:var(--text3);margin-top:6px">Total Bills</div>
+          </div>
+          <div class="card" style="text-align:center;padding:24px 16px">
+            <div style="font-family:var(--mono);font-size:32px;font-weight:600;color:var(--violet)" id="rpt4">—</div>
+            <div style="font-size:12px;color:var(--text3);margin-top:6px">Collection Rate</div>
+          </div>
+        </div>
+        <div class="g2">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Condition Distribution</div></div>
+            <div class="card-body" id="condRpt"></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Revenue Summary</div></div>
+            <div class="card-body" id="revRpt"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Monthly Admissions vs Discharges</div></div>
+          <div class="card-body"><div class="chart-area" id="rptChart"></div></div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- TOASTS -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- MODALS                                                    -->
+<!-- ══════════════════════════════════════════════════════════ -->
+
+<!-- NEW PATIENT -->
+<div class="modal-overlay" id="newPatientModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-header-icon">👤</div>
+      <div>
+        <div class="modal-title">New Patient Record</div>
+        <div class="modal-subtitle">Register a new patient admission</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('newPatientModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Full Name *</label>
+        <input class="form-input" type="text" id="np-name" placeholder="Patient full name">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Condition *</label>
+          <select class="form-select" id="np-condition">
+            <option value="FLU">Flu</option>
+            <option value="COLD">Common Cold</option>
+            <option value="ASTHMA">Asthma</option>
+            <option value="DIABETES">Diabetes</option>
+            <option value="HYPERTENSION">Hypertension</option>
+            <option value="COVID">COVID-19</option>
+            <option value="OTHER">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date of Discharge</label>
+          <input class="form-input" type="date" id="np-exit">
+          <div class="form-hint">Leave blank if still admitted</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Doctor Notes</label>
+        <textarea class="form-textarea" id="np-notes" placeholder="Clinical observations and treatment plan..."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Next Appointment</label>
+        <input class="form-input" type="date" id="np-appt">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('newPatientModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addPatient()">Save Patient Record</button>
+    </div>
+  </div>
+</div>
+
+<!-- VIEW PATIENT -->
+<div class="modal-overlay" id="viewPatientModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-header-icon">📋</div>
+      <div>
+        <div class="modal-title">Patient Record</div>
+        <div class="modal-subtitle">Full medical record details</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('viewPatientModal')">✕</button>
+    </div>
+    <div class="modal-body" id="viewPtContent"></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('viewPatientModal')">Close</button>
+      <button class="btn btn-green" onclick="genBillFromPatient()">🧾 Generate Bill</button>
+    </div>
+  </div>
+</div>
+
+<!-- NEW BILL -->
+<div class="modal-overlay" id="newBillModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-header-icon">💳</div>
+      <div>
+        <div class="modal-title">Generate Bill</div>
+        <div class="modal-subtitle">Create patient invoice</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('newBillModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Patient</label>
+        <select class="form-select" id="b-patient"></select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Consultation Fee (₹)</label>
+          <input class="form-input" type="number" id="b-c" value="500" oninput="calcBill()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Treatment Charges (₹)</label>
+          <input class="form-input" type="number" id="b-t" value="0" oninput="calcBill()">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Medicines (₹)</label>
+          <input class="form-input" type="number" id="b-m" value="0" oninput="calcBill()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Room Charges (₹)</label>
+          <input class="form-input" type="number" id="b-r" value="0" oninput="calcBill()">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Lab Tests (₹)</label>
+          <input class="form-input" type="number" id="b-l" value="0" oninput="calcBill()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Other (₹)</label>
+          <input class="form-input" type="number" id="b-o" value="0" oninput="calcBill()">
+        </div>
+      </div>
+      <div class="bill-total-line">
+        <span class="bill-total-lbl">Total Amount</span>
+        <span class="bill-total-val" id="billTotalDisp">₹500</span>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('newBillModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveBill()">Issue Bill</button>
+    </div>
+  </div>
+</div>
+
+<!-- VIEW BILL -->
+<div class="modal-overlay" id="viewBillModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-header-icon">🧾</div>
+      <div>
+        <div class="modal-title">Bill Details</div>
+        <div class="modal-subtitle" id="viewBillSubtitle">Invoice</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('viewBillModal')">✕</button>
+    </div>
+    <div class="modal-body" id="viewBillContent"></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('viewBillModal')">Close</button>
+      <button class="btn btn-green" id="markPaidBtn">✓ Mark as Paid</button>
+    </div>
+  </div>
+</div>
+
+<!-- APPOINTMENT -->
+<div class="modal-overlay" id="apptModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-header-icon">📅</div>
+      <div>
+        <div class="modal-title">Schedule Appointment</div>
+        <div class="modal-subtitle">Book a patient appointment</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('apptModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Patient Name *</label>
+        <input class="form-input" type="text" id="a-pt" placeholder="Enter patient name">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Doctor</label>
+        <select class="form-select" id="a-dr">
+          <option>Dr. Priya Sharma — General Medicine</option>
+          <option>Dr. Raj Mehta — Cardiology</option>
+          <option>Dr. Anita Iyer — Neurology</option>
+          <option>Dr. Kiran Das — Paediatrics</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Date</label>
+          <input class="form-input" type="date" id="a-date">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Time Slot</label>
+          <select class="form-select" id="a-time">
+            <option>09:00 AM</option><option>09:30 AM</option><option>10:00 AM</option>
+            <option>10:30 AM</option><option>11:00 AM</option><option>11:30 AM</option>
+            <option>02:00 PM</option><option>02:30 PM</option><option>03:00 PM</option><option>04:00 PM</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('apptModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveAppt()">Confirm Appointment</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- JAVASCRIPT                                                -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<script>
+const API = 'http://127.0.0.1:8000/api';
+let isOnline = false;
+let currentSec = 'dashboard';
+let condFilter = 'ALL';
+let billFilter = 'ALL';
+let currentPt = null;
+let currentBill = null;
+
+// ─── DEMO DATA ───
+const DEMO_REC = [
+  {id:1,name:'Rahul Sharma',condition:'DIABETES',doctor_notes:'Blood sugar stable, continue metformin.',date_of_visit:'2025-03-01',date_of_exit:'2025-03-05',next_appointment:'2025-04-01'},
+  {id:2,name:'Priya Iyer',condition:'FLU',doctor_notes:'Mild fever, prescribed paracetamol.',date_of_visit:'2025-03-03',date_of_exit:'2025-03-04',next_appointment:'2025-03-20'},
+  {id:3,name:'Anil Kumar',condition:'HYPERTENSION',doctor_notes:'BP 150/90, adjusting medication.',date_of_visit:'2025-02-28',date_of_exit:null,next_appointment:'2025-03-15'},
+  {id:4,name:'Sunita Rao',condition:'ASTHMA',doctor_notes:'Inhaler usage increased. Close monitoring.',date_of_visit:'2025-03-05',date_of_exit:'2025-03-07',next_appointment:'2025-04-05'},
+  {id:5,name:'Vikram Singh',condition:'COVID',doctor_notes:'Mild symptoms, isolation advised.',date_of_visit:'2025-03-06',date_of_exit:null,next_appointment:null},
+  {id:6,name:'Deepa Nair',condition:'COLD',doctor_notes:'Prescribed antihistamines, rest.',date_of_visit:'2025-03-07',date_of_exit:'2025-03-08',next_appointment:null},
+  {id:7,name:'Ravi Pillai',condition:'OTHER',doctor_notes:'Routine annual checkup. All clear.',date_of_visit:'2025-03-02',date_of_exit:'2025-03-02',next_appointment:'2025-09-01'},
+];
+const DEMO_BILLS = [
+  {id:1,bill_number:'BILL-001',patient_name:'Rahul Sharma',record:1,date_issued:'2025-03-05',consultation_fee:500,treatment_charges:2000,medicine_charges:800,room_charges:3000,lab_tests:1200,other_charges:0,total_amount:7500,is_paid:true,date_paid:'2025-03-06'},
+  {id:2,bill_number:'BILL-002',patient_name:'Priya Iyer',record:2,date_issued:'2025-03-04',consultation_fee:500,treatment_charges:0,medicine_charges:350,room_charges:0,lab_tests:400,other_charges:0,total_amount:1250,is_paid:false,date_paid:null},
+  {id:3,bill_number:'BILL-003',patient_name:'Sunita Rao',record:4,date_issued:'2025-03-07',consultation_fee:500,treatment_charges:1500,medicine_charges:600,room_charges:4000,lab_tests:800,other_charges:200,total_amount:7600,is_paid:false,date_paid:null},
+  {id:4,bill_number:'BILL-004',patient_name:'Deepa Nair',record:6,date_issued:'2025-03-08',consultation_fee:500,treatment_charges:0,medicine_charges:200,room_charges:0,lab_tests:0,other_charges:0,total_amount:700,is_paid:true,date_paid:'2025-03-08'},
+];
+const DEMO_APPTS = [
+  {id:1,patient:'Rahul Sharma',doctor:'Dr. Priya Sharma — General Medicine',date:'2025-03-09',time:'09:00 AM',status:'CONFIRMED'},
+  {id:2,patient:'Sunita Rao',doctor:'Dr. Raj Mehta — Cardiology',date:'2025-03-09',time:'10:30 AM',status:'CONFIRMED'},
+  {id:3,patient:'Anil Kumar',doctor:'Dr. Priya Sharma — General Medicine',date:'2025-03-09',time:'11:00 AM',status:'PENDING'},
+  {id:4,patient:'Vikram Singh',doctor:'Dr. Anita Iyer — Neurology',date:'2025-03-10',time:'02:00 PM',status:'PENDING'},
+  {id:5,patient:'Deepa Nair',doctor:'Dr. Kiran Das — Paediatrics',date:'2025-03-11',time:'03:00 PM',status:'CONFIRMED'},
+];
+const STAFF = [
+  {name:'Dr. Priya Sharma',role:'Doctor',dept:'General Medicine',shift:'Morning',status:'ON DUTY'},
+  {name:'Dr. Raj Mehta',role:'Doctor',dept:'Cardiology',shift:'Morning',status:'ON DUTY'},
+  {name:'Dr. Anita Iyer',role:'Doctor',dept:'Neurology',shift:'Afternoon',status:'OFF DUTY'},
+  {name:'Dr. Kiran Das',role:'Doctor',dept:'Paediatrics',shift:'Morning',status:'ON DUTY'},
+  {name:'Nurse Kavitha',role:'Nurse',dept:'General Ward',shift:'Morning',status:'ON DUTY'},
+  {name:'Nurse Raju',role:'Nurse',dept:'ICU',shift:'Night',status:'OFF DUTY'},
+  {name:'Lab Tech Vijay',role:'Lab Technician',dept:'Pathology',shift:'Morning',status:'ON DUTY'},
+];
+const COND_LABEL = {FLU:'Flu',COLD:'Common Cold',ASTHMA:'Asthma',DIABETES:'Diabetes',HYPERTENSION:'Hypertension',COVID:'COVID-19',OTHER:'Other'};
+const COND_BADGE = {FLU:'badge-blue',COLD:'badge-gray',ASTHMA:'badge-amber',DIABETES:'badge-red',HYPERTENSION:'badge-violet',COVID:'badge-red',OTHER:'badge-gray'};
+const AV_COLORS = ['#0f1f3d','#00a96e','#3b82f6','#ef4444','#8b5cf6','#f59e0b','#06b6d4'];
+
+let allRecs = [], allBills = [], allAppts = [...DEMO_APPTS];
+let rStats = {}, bStats = {};
+
+// ─── HELPERS ───
+const $ = id => document.getElementById(id);
+const set = (id, v) => { const e=$(id); if(e) e.textContent=v; };
+function avColor(n) { let h=0; for(let c of n) h=(h+c.charCodeAt(0))%AV_COLORS.length; return AV_COLORS[h]; }
+function initials(n) { return n.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(); }
+function inr(n) { return '₹'+Number(n).toLocaleString('en-IN'); }
+
+// ─── API ───
+async function apiFetch(path, opts={}) {
+  const r = await fetch(API+path, {headers:{'Content-Type':'application/json'}, ...opts});
+  if(!r.ok) throw new Error(r.statusText);
+  return r.json();
+}
+
+async function checkAPI() {
+  try {
+    rStats = await apiFetch('/records/stats/');
+    isOnline = true;
+    $('apiDot').className = 'api-dot online';
+    $('apiStatusText').textContent = 'API Connected';
+    $('offlineBar').classList.remove('show');
+    const [r,b,bs] = await Promise.all([apiFetch('/records/'),apiFetch('/billing/'),apiFetch('/billing/stats/')]);
+    allRecs=r; allBills=b; bStats=bs;
+  } catch {
+    isOnline = false;
+    $('apiDot').className = 'api-dot offline';
+    $('apiStatusText').textContent = 'API Offline';
+    $('offlineBar').classList.add('show');
+    allRecs=[...DEMO_REC]; allBills=[...DEMO_BILLS];
+    rStats={total_records:DEMO_REC.length,currently_admitted:DEMO_REC.filter(r=>!r.date_of_exit).length,discharged:DEMO_REC.filter(r=>r.date_of_exit).length,by_condition:Object.fromEntries(Object.keys(COND_LABEL).map(k=>[k,DEMO_REC.filter(r=>r.condition===k).length]))};
+    bStats={total_billed:DEMO_BILLS.reduce((s,b)=>s+Number(b.total_amount),0),total_collected:DEMO_BILLS.filter(b=>b.is_paid).reduce((s,b)=>s+Number(b.total_amount),0),total_pending:DEMO_BILLS.filter(b=>!b.is_paid).reduce((s,b)=>s+Number(b.total_amount),0),total_bills:DEMO_BILLS.length,paid_bills:DEMO_BILLS.filter(b=>b.is_paid).length,pending_bills:DEMO_BILLS.filter(b=>!b.is_paid).length};
+  }
+  refreshDash();
+}
+
+// ─── DASHBOARD ───
+function refreshDash() {
+  const admitted = rStats.currently_admitted ?? allRecs.filter(r=>!r.date_of_exit).length;
+  const total = rStats.total_records ?? allRecs.length;
+  const discharged = rStats.discharged ?? allRecs.filter(r=>r.date_of_exit).length;
+
+  set('kpi1', total);
+  set('kpi2', admitted);
+  set('kpi3', bStats.pending_bills ?? 0);
+  set('kpi4', inr(bStats.total_collected ?? 0));
+  set('bedFree', 32 - admitted - 3);
+  set('bedOcc', admitted);
+  set('bedRes', 3);
+
+  // Nav badges
+  set('navBadgePatients', total);
+  set('navBadgeBilling', bStats.pending_bills ?? 0);
+
+  // Date
+  $('dashDate').textContent = new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+  renderActivity();
+  renderMiniCondChart();
+  renderTodayAppts();
+  renderAdmChart();
+}
+
+function renderActivity() {
+  const items = [
+    {icon:'👤',bg:'var(--blue-s)',text:`${allRecs.filter(r=>!r.date_of_exit).length} patients currently admitted across all wards`,time:'Live'},
+    {icon:'💳',bg:'var(--green-s)',text:`Revenue collected: ${inr(bStats.total_collected??0)} of ${inr(bStats.total_billed??0)} total`,time:'Today'},
+    {icon:'⏳',bg:'var(--amber-s)',text:`${bStats.pending_bills??0} bills pending — ${inr(bStats.total_pending??0)} outstanding`,time:'Action needed'},
+    {icon:'📅',bg:'var(--violet-s)',text:`Next: ${allAppts[0]?.patient??'—'} with ${allAppts[0]?.doctor?.split('—')[0]??'—'} at ${allAppts[0]?.time??'—'}`,time:'Upcoming'},
+    {icon:'🚨',bg:'var(--red-s)',text:'ICU occupancy at 62% — routine monitoring in progress',time:'Alert'},
+    {icon:'✅',bg:'var(--green-s)',text:'All morning rounds completed successfully',time:'09:30'},
+  ];
+  $('activityList').innerHTML = items.map(a=>`
+    <div class="activity-item">
+      <div class="activity-icon" style="background:${a.bg}">${a.icon}</div>
+      <div class="activity-body">
+        <div class="activity-text">${a.text}</div>
+        <div class="activity-time">${a.time}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderMiniCondChart() {
+  const conds = Object.entries(COND_LABEL);
+  const counts = conds.map(([k])=> rStats.by_condition?.[k] ?? allRecs.filter(r=>r.condition===k).length);
+  const max = Math.max(...counts,1);
+  const colors = ['#3b82f6','#94a3b8','#f59e0b','#ef4444','#8b5cf6','#ef4444','#94a3b8'];
+  $('miniCondChart').innerHTML = conds.map(([k,lbl],i)=>`
+    <div class="prog-row">
+      <div class="prog-meta"><span class="prog-label">${lbl}</span><span class="prog-val">${counts[i]}</span></div>
+      <div class="prog-track"><div class="prog-fill" style="width:${counts[i]/max*100}%;background:${colors[i]}"></div></div>
+    </div>
+  `).join('');
+}
+
+function renderTodayAppts() {
+  $('todayApptTbl').innerHTML = allAppts.slice(0,4).map(a=>`
+    <tr>
+      <td><div class="pcell">
+        <div class="avatar" style="background:${avColor(a.patient)}">${initials(a.patient)}</div>
+        <span style="font-weight:600">${a.patient}</span>
+      </div></td>
+      <td style="color:var(--text2);font-size:12px">${a.doctor.split('—')[0].trim()}</td>
+      <td style="font-family:var(--mono);font-size:12px">${a.time}</td>
+      <td><span class="badge ${a.status==='CONFIRMED'?'badge-green':'badge-amber'}">${a.status}</span></td>
+    </tr>
+  `).join('');
+}
+
+function renderAdmChart() {
+  const m=['J','F','M','A','M','J','J','A','S','O','N','D'], v=[45,52,38,61,70,55,48,63,72,58,44,50], mx=Math.max(...v);
+  $('admChart').innerHTML = m.map((lbl,i)=>`
+    <div class="bar-col">
+      <div class="bar-col-inner">
+        <div class="bar" style="height:${v[i]/mx*100}%;background:${i===2?'var(--green)':'var(--off3)'};${i===2?'box-shadow:0 4px 12px rgba(0,169,110,.3)':''}"></div>
+      </div>
+      <div class="bar-lbl">${lbl}</div>
+    </div>
+  `).join('');
+}
+
+// ─── PATIENTS ───
+function renderRecs(filter='ALL', search='') {
+  const data = allRecs.filter(r=>{
+    const mc = filter==='ALL' || r.condition===filter;
+    const ms = !search || r.name.toLowerCase().includes(search.toLowerCase()) || (COND_LABEL[r.condition]||'').toLowerCase().includes(search.toLowerCase());
+    return mc && ms;
+  });
+  set('recCount', `${data.length} record${data.length!==1?'s':''}`);
+  $('recordsTbl').innerHTML = data.length ? data.map(r=>`
+    <tr onclick="viewPt(${r.id})">
+      <td><div class="pcell">
+        <div class="avatar" style="background:${avColor(r.name)}">${initials(r.name)}</div>
+        <div><div class="pcell-name">${r.name}</div><div class="pcell-id">#PT-${String(r.id).padStart(4,'0')}</div></div>
+      </div></td>
+      <td><span class="badge ${COND_BADGE[r.condition]||'badge-gray'}">${COND_LABEL[r.condition]||r.condition}</span></td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--text2)">${r.date_of_visit}</td>
+      <td style="font-family:var(--mono);font-size:12px;color:${r.date_of_exit?'var(--green)':'var(--amber)'}">${r.date_of_exit||'Admitted'}</td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--text3)">${r.next_appointment||'—'}</td>
+      <td><span class="badge ${r.date_of_exit?'badge-green':'badge-amber'}">${r.date_of_exit?'Discharged':'Admitted'}</span></td>
+      <td><button class="btn btn-sm" onclick="event.stopPropagation();viewPt(${r.id})">View →</button></td>
+    </tr>
+  `).join('') : `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text3)">No records found</td></tr>`;
+}
+
+function viewPt(id) {
+  const r = allRecs.find(x=>x.id===id); if(!r) return;
+  currentPt = r;
+  $('viewPtContent').innerHTML = `
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;padding:16px;background:var(--off);border-radius:var(--r-sm)">
+      <div class="avatar" style="background:${avColor(r.name)};width:48px;height:48px;font-size:18px;border-radius:10px">${initials(r.name)}</div>
+      <div>
+        <div style="font-size:17px;font-weight:600">${r.name}</div>
+        <div style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-top:2px">#PT-${String(r.id).padStart(4,'0')}</div>
+        <div style="margin-top:6px"><span class="badge ${COND_BADGE[r.condition]||'badge-gray'}">${COND_LABEL[r.condition]||r.condition}</span></div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:1px;background:var(--border);border-radius:var(--r-sm);overflow:hidden;margin-bottom:16px">
+      <div class="bill-line" style="padding:10px 14px;background:var(--white)"><span class="bill-lbl">Admission Date</span><span class="bill-val">${r.date_of_visit}</span></div>
+      <div class="bill-line" style="padding:10px 14px;background:var(--white)"><span class="bill-lbl">Discharge Date</span><span class="bill-val" style="color:${r.date_of_exit?'var(--green)':'var(--amber)'}">${r.date_of_exit||'Still Admitted'}</span></div>
+      <div class="bill-line" style="padding:10px 14px;background:var(--white);border-bottom:none"><span class="bill-lbl">Next Appointment</span><span class="bill-val">${r.next_appointment||'—'}</span></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Doctor Notes</label>
+      <div style="background:var(--off);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px 14px;font-size:13px;color:var(--text);line-height:1.7">${r.doctor_notes||'No notes recorded.'}</div>
+    </div>
+  `;
+  openModal('viewPatientModal');
+}
+
+async function addPatient() {
+  const name = $('np-name').value.trim();
+  if(!name) { showToast('Patient name is required','error'); return; }
+  const payload = {name, condition:$('np-condition').value, doctor_notes:$('np-notes').value, date_of_exit:$('np-exit').value||null, next_appointment:$('np-appt').value||null};
+  if(isOnline) {
+    try { const r = await apiFetch('/records/',{method:'POST',body:JSON.stringify(payload)}); allRecs.unshift(r); }
+    catch { allRecs.unshift({...payload,id:Date.now(),date_of_visit:new Date().toISOString().slice(0,10)}); showToast('Saved locally (backend error)','warn'); }
+  } else {
+    allRecs.unshift({...payload,id:Date.now(),date_of_visit:new Date().toISOString().slice(0,10)});
+  }
+  closeModal('newPatientModal');
+  $('np-name').value=''; $('np-notes').value='';
+  showToast(`${name} added successfully`,'success');
+  renderRecs(condFilter); refreshDash();
+}
+
+function filterRecs(s) { renderRecs(condFilter,s); }
+function setCondFilter(f,el) {
+  condFilter=f;
+  document.querySelectorAll('#section-patients .filter-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  renderRecs(f,$('ptSearch').value);
+}
+
+function genBillFromPatient() {
+  if(!currentPt) return;
+  closeModal('viewPatientModal');
+  renderBillPatientSel();
+  setTimeout(()=>{ $('b-patient').value=isOnline?currentPt.id:currentPt.name; openModal('newBillModal'); },200);
+}
+
+// ─── BILLING ───
+function renderBillPatientSel() {
+  $('b-patient').innerHTML = allRecs.map(r=>`<option value="${isOnline?r.id:r.name}">${r.name}</option>`).join('');
+}
+
+function openNewBillModal() { renderBillPatientSel(); openModal('newBillModal'); }
+
+function calcBill() {
+  const t = ['b-c','b-t','b-m','b-r','b-l','b-o'].reduce((s,id)=>s+(parseFloat($(id).value)||0),0);
+  $('billTotalDisp').textContent = inr(t);
+}
+
+async function saveBill() {
+  const flds = ['b-c','b-t','b-m','b-r','b-l','b-o'];
+  const [consultation_fee,treatment_charges,medicine_charges,room_charges,lab_tests,other_charges] = flds.map(f=>parseFloat($(f).value)||0);
+  const total_amount = consultation_fee+treatment_charges+medicine_charges+room_charges+lab_tests+other_charges;
+  const pval = $('b-patient').value;
+  if(isOnline) {
+    const payload = {record:parseInt(pval),consultation_fee,treatment_charges,medicine_charges,room_charges,lab_tests,other_charges,bill_number:'BILL-'+String(allBills.length+1).padStart(3,'0')};
+    try { const b=await apiFetch('/billing/',{method:'POST',body:JSON.stringify(payload)}); allBills.unshift(b); showToast(`${b.bill_number} created`,'success'); }
+    catch(e) { showToast('Error: '+e.message,'error'); return; }
+  } else {
+    const rec = allRecs.find(r=>r.name===pval||String(r.id)===pval);
+    allBills.unshift({id:Date.now(),bill_number:'BILL-'+String(allBills.length+1).padStart(3,'0'),patient_name:rec?.name||pval,record:rec?.id,date_issued:new Date().toISOString().slice(0,10),consultation_fee,treatment_charges,medicine_charges,room_charges,lab_tests,other_charges,total_amount,is_paid:false,date_paid:null});
+    showToast('Bill created','success');
+  }
+  closeModal('newBillModal');
+  renderBills(billFilter); refreshBillStats(); refreshDash();
+}
+
+function renderBills(filter='ALL', search='') {
+  const data = allBills.filter(b=>{
+    const ms = filter==='ALL'||(filter==='PAID'?b.is_paid:!b.is_paid);
+    const ss = !search||(b.patient_name||'').toLowerCase().includes(search.toLowerCase())||(b.bill_number||'').toLowerCase().includes(search.toLowerCase());
+    return ms&&ss;
+  });
+  $('billingTbl').innerHTML = data.length ? data.map(b=>`
+    <tr onclick="viewBill(${b.id})">
+      <td style="font-family:var(--mono);font-size:12px;font-weight:600;color:var(--navy)">${b.bill_number}</td>
+      <td><div class="pcell">
+        <div class="avatar" style="background:${avColor(b.patient_name||'')}">${initials(b.patient_name||'?')}</div>
+        <span style="font-weight:500">${b.patient_name||'—'}</span>
+      </div></td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--text3)">${b.date_issued}</td>
+      <td style="font-family:var(--mono);font-size:12px">${inr(b.consultation_fee)}</td>
+      <td style="font-family:var(--mono);font-size:12px">${inr(b.treatment_charges)}</td>
+      <td style="font-family:var(--mono);font-size:13px;font-weight:700;color:var(--navy)">${inr(b.total_amount)}</td>
+      <td><span class="badge ${b.is_paid?'badge-green':'badge-amber'}">${b.is_paid?'Paid':'Pending'}</span></td>
+      <td><button class="btn btn-sm" onclick="event.stopPropagation();viewBill(${b.id})">View →</button></td>
+    </tr>
+  `).join('') : `<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text3)">No bills found</td></tr>`;
+}
+
+function viewBill(id) {
+  const b=allBills.find(x=>x.id===id); if(!b) return;
+  currentBill=b;
+  $('viewBillSubtitle').textContent = b.bill_number + ' — ' + b.date_issued;
+  $('viewBillContent').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding:14px;background:var(--off);border-radius:var(--r-sm)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="avatar" style="background:${avColor(b.patient_name||'')}">  ${initials(b.patient_name||'?')}</div>
+        <div><div style="font-weight:600">${b.patient_name||'—'}</div><div style="font-family:var(--mono);font-size:11px;color:var(--text3)">${b.bill_number}</div></div>
+      </div>
+      <span class="badge ${b.is_paid?'badge-green':'badge-amber'}" style="font-size:12px">${b.is_paid?'✓ PAID':'⏳ PENDING'}</span>
+    </div>
+    <div style="border:1px solid var(--border);border-radius:var(--r-sm);overflow:hidden;margin-bottom:4px">
+      ${[['Consultation Fee',b.consultation_fee],['Treatment Charges',b.treatment_charges],['Medicine Charges',b.medicine_charges],['Room Charges',b.room_charges],['Lab Tests',b.lab_tests],['Other Charges',b.other_charges]].map(([l,v])=>`
+        <div class="bill-line" style="padding:9px 14px;background:var(--white)"><span class="bill-lbl">${l}</span><span class="bill-val">${inr(v)}</span></div>
+      `).join('')}
+    </div>
+    <div class="bill-total-line"><span class="bill-total-lbl">Total Amount</span><span class="bill-total-val">${inr(b.total_amount)}</span></div>
+    ${b.date_paid?`<div style="margin-top:10px;font-size:12px;color:var(--green);font-weight:500">✓ Payment received on ${b.date_paid}</div>`:''}
+  `;
+  const btn=$('markPaidBtn');
+  btn.textContent=b.is_paid?'✓ Already Paid':'✓ Mark as Paid';
+  btn.disabled=b.is_paid;
+  btn.onclick=()=>markPaid(b.id);
+  openModal('viewBillModal');
+}
+
+async function markPaid(id) {
+  const b=allBills.find(x=>x.id===id); if(!b) return;
+  if(isOnline) {
+    try { const r=await apiFetch(`/billing/${id}/mark-paid/`,{method:'POST'}); Object.assign(b,r.bill); }
+    catch { b.is_paid=true; b.date_paid=new Date().toISOString().slice(0,10); }
+  } else { b.is_paid=true; b.date_paid=new Date().toISOString().slice(0,10); }
+  closeModal('viewBillModal');
+  renderBills(billFilter); refreshBillStats(); refreshDash();
+  showToast(`${b.bill_number} marked as paid ✓`,'success');
+}
+
+function refreshBillStats() {
+  const total=allBills.reduce((s,b)=>s+Number(b.total_amount),0);
+  const coll=allBills.filter(b=>b.is_paid).reduce((s,b)=>s+Number(b.total_amount),0);
+  const pend=allBills.filter(b=>!b.is_paid).reduce((s,b)=>s+Number(b.total_amount),0);
+  set('bkpi1',inr(total)); set('bkpi2',inr(coll)); set('bkpi3',inr(pend));
+  bStats={total_billed:total,total_collected:coll,total_pending:pend,total_bills:allBills.length,paid_bills:allBills.filter(b=>b.is_paid).length,pending_bills:allBills.filter(b=>!b.is_paid).length};
+}
+
+function filterBills(s) { renderBills(billFilter,s); }
+function setBillFilter(f,el) {
+  billFilter=f;
+  document.querySelectorAll('#section-billing .filter-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active'); renderBills(f);
+}
+
+// ─── APPOINTMENTS ───
+function renderAppts() {
+  $('apptTbl').innerHTML = allAppts.map(a=>`
+    <tr>
+      <td><div class="pcell"><div class="avatar" style="background:${avColor(a.patient)}">${initials(a.patient)}</div>${a.patient}</div></td>
+      <td style="font-size:12px;color:var(--text2)">${a.doctor.split('—')[0].trim()}</td>
+      <td style="font-family:var(--mono);font-size:12px">${a.date}</td>
+      <td style="font-family:var(--mono);font-size:12px">${a.time}</td>
+      <td><span class="badge ${a.status==='CONFIRMED'?'badge-green':'badge-amber'}">${a.status}</span></td>
+    </tr>
+  `).join('');
+}
+
+function renderSlots() {
+  const slots=['09:00','09:30','10:00','10:30','11:00','11:30','02:00','02:30','03:00','03:30','04:00','04:30'];
+  const booked=['09:00','10:30','11:00'], emerg=['02:00'];
+  $('slotGrid').innerHTML = slots.map(s=>{
+    let cls='avail',lbl=s;
+    if(booked.includes(s)){cls='booked';lbl=s+' 🔒';}
+    if(emerg.includes(s)){cls='emerg';lbl=s+' ⚡';}
+    return `<div class="slot ${cls}">${lbl}</div>`;
+  }).join('');
+}
+
+function saveAppt() {
+  const pt=$('a-pt').value.trim();
+  if(!pt){showToast('Patient name required','error');return;}
+  allAppts.push({id:Date.now(),patient:pt,doctor:$('a-dr').value,date:$('a-date').value||new Date().toISOString().slice(0,10),time:$('a-time').value,status:'PENDING'});
+  closeModal('apptModal'); showToast(`Appointment booked for ${pt}`,'success');
+  renderAppts(); renderTodayAppts();
+}
+
+// ─── BEDS ───
+function renderBeds() {
+  const occ=rStats.currently_admitted||2,total=32;
+  const statuses=Array.from({length:total},(_,i)=>i<occ?'occupied':i<occ+3?'reserved':i===15||i===22?'maint':'free');
+  $('bedMap').innerHTML=statuses.map((s,i)=>`<div class="bed ${s}" title="Bed ${i+1}"><div class="bed-num">${String(i+1).padStart(2,'0')}</div><div>${s==='occupied'?'🔴':s==='reserved'?'🟡':s==='maint'?'🔧':'🟢'}</div></div>`).join('');
+  const icu=['occupied','occupied','occupied','occupied','occupied','reserved','free','free'];
+  $('icuMap').innerHTML=icu.map((s,i)=>`<div class="bed ${s}"><div class="bed-num">I${i+1}</div><div>${s==='occupied'?'🔴':s==='reserved'?'🟡':'🟢'}</div></div>`).join('');
+  const paed=['occupied','occupied','free','free','reserved','free','free','free'];
+  $('paedMap').innerHTML=paed.map((s,i)=>`<div class="bed ${s}"><div class="bed-num">P${i+1}</div><div>${s==='occupied'?'🔴':s==='reserved'?'🟡':'🟢'}</div></div>`).join('');
+  const f=statuses.filter(s=>s==='free').length, o=statuses.filter(s=>s==='occupied').length, r=statuses.filter(s=>s==='reserved').length;
+  set('bdfree',f); set('bdocc',o); set('bdres',r); set('bdrate',Math.round(o/total*100)+'%');
+}
+
+// ─── STAFF ───
+function renderStaff() {
+  $('staffTbl').innerHTML=STAFF.map(s=>`
+    <tr>
+      <td><div class="pcell"><div class="avatar" style="background:${avColor(s.name)}">${initials(s.name)}</div>${s.name}</div></td>
+      <td><span class="badge ${s.role==='Doctor'?'badge-navy':s.role==='Nurse'?'badge-violet':'badge-blue'}">${s.role}</span></td>
+      <td style="color:var(--text2);font-size:13px">${s.dept}</td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--text3)">${s.shift}</td>
+      <td><span class="badge ${s.status==='ON DUTY'?'badge-green':'badge-gray'}">${s.status}</span></td>
+    </tr>
+  `).join('');
+}
+
+// ─── REPORTS ───
+function renderReports() {
+  const total=rStats.total_records??allRecs.length, disc=rStats.discharged??allRecs.filter(r=>r.date_of_exit).length;
+  const rate=bStats.total_billed?Math.round(bStats.total_collected/bStats.total_billed*100):0;
+  set('rpt1',total); set('rpt2',disc); set('rpt3',bStats.total_bills??allBills.length); set('rpt4',rate+'%');
+  const conds=Object.entries(COND_LABEL);
+  const counts=conds.map(([k])=>rStats.by_condition?.[k]??allRecs.filter(r=>r.condition===k).length);
+  const mx=Math.max(...counts,1);
+  const cols=['#3b82f6','#94a3b8','#f59e0b','#ef4444','#8b5cf6','#ef4444','#94a3b8'];
+  $('condRpt').innerHTML=conds.map(([k,lbl],i)=>`
+    <div class="prog-row">
+      <div class="prog-meta"><span class="prog-label">${lbl}</span><span class="prog-val">${counts[i]} (${Math.round(counts[i]/Math.max(total,1)*100)}%)</span></div>
+      <div class="prog-track"><div class="prog-fill" style="width:${counts[i]/mx*100}%;background:${cols[i]}"></div></div>
+    </div>
+  `).join('');
+  $('revRpt').innerHTML=`
+    <div class="bill-line"><span class="bill-lbl">Total Billed</span><span class="bill-val">${inr(bStats.total_billed??0)}</span></div>
+    <div class="bill-line"><span class="bill-lbl">Collected</span><span class="bill-val" style="color:var(--green)">${inr(bStats.total_collected??0)}</span></div>
+    <div class="bill-line"><span class="bill-lbl">Outstanding</span><span class="bill-val" style="color:var(--red)">${inr(bStats.total_pending??0)}</span></div>
+    <div class="bill-total-line" style="margin-top:12px"><span class="bill-total-lbl">Collection Rate</span><span class="bill-total-val" style="color:var(--green)">${rate}%</span></div>
+    <div class="prog-track" style="height:8px;border-radius:4px;margin-top:12px"><div class="prog-fill" style="width:${rate}%;background:linear-gradient(90deg,var(--green),var(--green2));height:100%;border-radius:4px"></div></div>
+  `;
+  const m=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],v=[60,55,70,65,75,80,68,72,85,78,62,70],mxv=Math.max(...v);
+  $('rptChart').innerHTML=m.map((lbl,i)=>`<div class="bar-col"><div class="bar-col-inner"><div class="bar" style="height:${v[i]/mxv*100}%;background:${i===8?'var(--navy)':'var(--off3)'};${i===8?'box-shadow:0 4px 12px rgba(15,31,61,.2)':''}"></div></div><div class="bar-lbl">${lbl}</div></div>`).join('');
+}
+
+// ─── SECTION SWITCHING ───
+const SEC_TITLES = {dashboard:'Dashboard',patients:'Patients',appointments:'Appointments',billing:'Billing & Payments',beds:'Bed Management',staff:'Staff Directory',reports:'Reports & Analytics'};
+const CTX1_LBL = {dashboard:'+ New Patient',patients:'+ Add Patient',appointments:'+ Schedule',billing:'+ Generate Bill',beds:'Update Beds',staff:'+ Add Staff',reports:'Export PDF'};
+const CTX2_LBL = {dashboard:'⚡ Quick Admit',patients:'⚡ Quick Admit',appointments:'⚡ Book Slot',billing:'⚡ Quick Bill',beds:'⚡ Assign Bed',staff:'⚡ Schedule',reports:'⚡ Analytics'};
+
+function switchSection(name, navEl) {
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  $('section-'+name).classList.add('active');
+  set('pageTitle', SEC_TITLES[name]||name);
+  $('ctxBtn1').textContent = CTX1_LBL[name]||'+ Action';
+  $('ctxBtn2').textContent = CTX2_LBL[name]||'⚡ Quick';
+  currentSec = name;
+  if(navEl) { document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active')); navEl.classList.add('active'); }
+  if(name==='patients') renderRecs();
+  if(name==='billing') { renderBills(); renderBillPatientSel(); refreshBillStats(); }
+  if(name==='appointments') { renderAppts(); renderSlots(); }
+  if(name==='beds') renderBeds();
+  if(name==='staff') renderStaff();
+  if(name==='reports') renderReports();
+}
+
+function handleCtx1() {
+  if(currentSec==='dashboard'||currentSec==='patients') openModal('newPatientModal');
+  else if(currentSec==='appointments') openModal('apptModal');
+  else if(currentSec==='billing') openNewBillModal();
+  else if(currentSec==='reports') showToast('Exporting...','success');
+  else showToast('Coming soon','warn');
+}
+function handleCtx2() {
+  if(currentSec==='dashboard'||currentSec==='patients') openModal('newPatientModal');
+  else if(currentSec==='appointments') openModal('apptModal');
+  else if(currentSec==='billing') openNewBillModal();
+  else showToast('Coming soon','warn');
+}
+
+// ─── MODALS ───
+function openModal(id) { $(id).classList.add('open'); document.body.style.overflow='hidden'; }
+function closeModal(id) { $(id).classList.remove('open'); document.body.style.overflow=''; }
+window.addEventListener('click',e=>{ if(e.target.classList.contains('modal-overlay')) closeModal(e.target.id); });
+
+// ─── TOAST ───
+function showToast(msg, type='default') {
+  const icons={success:'✅',error:'❌',warn:'⚠️',default:'ℹ️'};
+  const el=document.createElement('div');
+  el.className=`toast ${type}`;
+  el.innerHTML=`<span class="toast-icon">${icons[type]||'ℹ️'}</span><span class="toast-msg">${msg}</span>`;
+  $('toastContainer').appendChild(el);
+  setTimeout(()=>{ el.style.opacity='0'; el.style.transform='translateX(16px)'; el.style.transition='all .3s ease'; setTimeout(()=>el.remove(),300); },3200);
+}
+
+// ─── INIT ───
+window.addEventListener('load',()=>{
+  setTimeout(async()=>{
+    $('loader').classList.add('hidden');
+    await checkAPI();
+  }, 1800);
+});
+</script>
+</body>
+</html>
